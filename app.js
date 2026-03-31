@@ -318,7 +318,7 @@
     flashcard.classList.toggle('flipped', state.isFlipped);
     if (state.isFlipped) {
       document.getElementById('rating-buttons').style.display = 'grid';
-      if (state.settings.autoPlay) pronounceWord(state.reviewQueue[state.reviewIndex]?.word);
+      if (state.settings.autoPlay) pronounceWord(state.reviewQueue[state.reviewIndex]?.word, 'us');
     } else {
       document.getElementById('rating-buttons').style.display = 'none';
     }
@@ -363,11 +363,11 @@
     'google uk english male', 'male', 'man'
   ];
 
-  function pickBestVoice(voices) {
+  function pickBestVoice(voices, accent) {
+    const langPrefix = accent === 'uk' ? 'en-GB' : 'en-US';
     const enVoices = voices.filter(v => v.lang && v.lang.startsWith('en'));
     if (enVoices.length === 0) return null;
 
-    // Score each voice: higher = better
     let best = null, bestScore = -999;
     for (const v of enVoices) {
       let score = 0;
@@ -378,11 +378,16 @@
       // Penalize known male voices
       if (MALE_VOICES.some(m => name.includes(m))) score -= 100;
 
-      // Prefer en-US
-      if (v.lang === 'en-US') score += 10;
+      // Strongly prefer matching accent
+      if (v.lang === langPrefix) score += 50;
+      // Also accept close matches (en-GB vs en_GB)
+      if (v.lang && v.lang.replace('_', '-') === langPrefix) score += 50;
+      // Penalize wrong accent
+      if (accent === 'uk' && v.lang === 'en-US') score -= 30;
+      if (accent === 'us' && v.lang === 'en-GB') score -= 30;
+
       // Prefer enhanced/premium voices
-      if (name.includes('enhanced') || name.includes('premium') || name.includes('compact')) score += 5;
-      // Prefer non-default (iOS specific higher quality voices)
+      if (name.includes('enhanced') || name.includes('premium')) score += 5;
       if (!v.default) score += 1;
 
       if (score > bestScore) {
@@ -393,22 +398,25 @@
     return best;
   }
 
-  function pronounceWord(word) {
+  function pronounceWord(word, accent) {
     if (!word || !window.speechSynthesis) return;
+    accent = accent || 'us';
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(word);
-    u.lang = 'en-US';
+    u.lang = accent === 'uk' ? 'en-GB' : 'en-US';
     u.rate = state.settings.ttsSpeed || 0.9;
-    u.pitch = 1.05; // Slightly higher pitch for a softer tone
+    u.pitch = 1.05;
 
     const voices = window.speechSynthesis.getVoices();
-    const voice = pickBestVoice(voices);
+    const voice = pickBestVoice(voices, accent);
     if (voice) u.voice = voice;
 
-    const btn = document.querySelector('.btn-pronounce');
+    // Animate the clicked button
+    const btn = document.querySelector(`.btn-accent[data-accent="${accent}"].playing, .btn-accent[data-accent="${accent}"]`);
+    document.querySelectorAll('.btn-accent').forEach(b => b.classList.remove('playing'));
     if (btn) btn.classList.add('playing');
-    u.onend = () => { if (btn) btn.classList.remove('playing'); };
-    u.onerror = () => { if (btn) btn.classList.remove('playing'); };
+    u.onend = () => { document.querySelectorAll('.btn-accent').forEach(b => b.classList.remove('playing')); };
+    u.onerror = () => { document.querySelectorAll('.btn-accent').forEach(b => b.classList.remove('playing')); };
     window.speechSynthesis.speak(u);
   }
 
@@ -1033,8 +1041,9 @@
           <div class="modal-word-title">${w.word}</div>
           <div style="color:var(--text-secondary);font-size:14px;">${w.phonetic || ''} ${w.pos || ''}</div>
         </div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn-pronounce" id="modal-pronounce" style="width:36px;height:36px;font-size:16px;">🔊</button>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-accent small" id="modal-us" data-accent="us">🇺🇸</button>
+          <button class="btn-accent small" id="modal-uk" data-accent="uk">🇬🇧</button>
           <button class="btn-modal-close" id="btn-close-modal">✕</button>
         </div>
       </div>
@@ -1060,7 +1069,8 @@
 
     modal.classList.add('visible');
 
-    document.getElementById('modal-pronounce').onclick = () => pronounceWord(w.word);
+    document.getElementById('modal-us').onclick = () => pronounceWord(w.word, 'us');
+    document.getElementById('modal-uk').onclick = () => pronounceWord(w.word, 'uk');
     document.getElementById('btn-close-modal').onclick = () => modal.classList.remove('visible');
     document.getElementById('btn-delete-word').onclick = () => {
       if (confirm(`确定要删除 "${w.word}" 吗？`)) {
@@ -1143,15 +1153,20 @@
 
     // Flashcard flip
     document.getElementById('flashcard').addEventListener('click', (e) => {
-      if (e.target.closest('.btn-pronounce')) return;
+      if (e.target.closest('.btn-accent')) return;
       flipCard();
     });
 
-    // Pronounce
-    document.getElementById('btn-pronounce').addEventListener('click', (e) => {
+    // Pronounce US/UK on flashcard
+    document.getElementById('btn-pronounce-us').addEventListener('click', (e) => {
       e.stopPropagation();
       const w = state.reviewQueue[state.reviewIndex];
-      if (w) pronounceWord(w.word);
+      if (w) pronounceWord(w.word, 'us');
+    });
+    document.getElementById('btn-pronounce-uk').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const w = state.reviewQueue[state.reviewIndex];
+      if (w) pronounceWord(w.word, 'uk');
     });
 
     // Rating
@@ -1212,9 +1227,12 @@
       else { lookupWord(word); }
     });
 
-    // Form pronounce
-    document.getElementById('form-btn-pronounce').addEventListener('click', () => {
-      pronounceWord(document.getElementById('form-word-display').textContent);
+    // Form pronounce US/UK
+    document.getElementById('form-btn-us').addEventListener('click', () => {
+      pronounceWord(document.getElementById('form-word-display').textContent, 'us');
+    });
+    document.getElementById('form-btn-uk').addEventListener('click', () => {
+      pronounceWord(document.getElementById('form-word-display').textContent, 'uk');
     });
 
     // Word list click

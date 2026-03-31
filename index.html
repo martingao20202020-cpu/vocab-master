@@ -92,7 +92,10 @@
             <div class="fc-word" id="fc-word"></div>
             <div class="fc-phonetic" id="fc-phonetic"></div>
             <div class="fc-pos" id="fc-pos"></div>
-            <button class="btn-pronounce" id="btn-pronounce" title="播放读音">🔊</button>
+            <div class="accent-buttons">
+              <button class="btn-accent" id="btn-pronounce-us" data-accent="us" title="美式发音">🇺🇸 美式</button>
+              <button class="btn-accent" id="btn-pronounce-uk" data-accent="uk" title="英式发音">🇬🇧 英式</button>
+            </div>
             <div class="fc-tap-hint">👆 点击翻转卡片</div>
           </div>
           <div class="flashcard-face flashcard-back" id="fc-back">
@@ -172,7 +175,10 @@
               <div id="form-word-display" style="font-size: 24px; font-weight: 700;"></div>
               <div id="form-phonetic-display" style="font-size: 14px; color: var(--text-secondary);"></div>
             </div>
-            <button class="btn-pronounce" id="form-btn-pronounce" style="width: 40px; height: 40px; font-size: 18px;">🔊</button>
+            <div class="accent-buttons" style="gap: 6px;">
+              <button class="btn-accent small" id="form-btn-us" data-accent="us" title="美式">🇺🇸</button>
+              <button class="btn-accent small" id="form-btn-uk" data-accent="uk" title="英式">🇬🇧</button>
+            </div>
           </div>
         </div>
 
