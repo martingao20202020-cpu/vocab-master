@@ -303,7 +303,22 @@ input::placeholder, textarea::placeholder {
 }
 
 .view.active {
-  display: block;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Review view special layout: card scrolls, rating buttons stay at bottom */
+#view-review.active {
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - var(--header-height) - var(--nav-height) - 36px);
+  overflow: hidden;
+}
+
+#view-review .flashcard-container {
+  flex: 1;
+  min-height: 0;
+  overflow: visible;
 }
 
 @keyframes viewFadeIn {
@@ -767,7 +782,7 @@ input::placeholder, textarea::placeholder {
   transform: rotateY(180deg);
   padding: 24px 20px;
   overflow-y: auto;
-  max-height: 70vh;
+  max-height: 52vh;
 }
 
 .fc-back-section {
@@ -900,6 +915,9 @@ input::placeholder, textarea::placeholder {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
+  flex-shrink: 0;
+  padding-top: 8px;
+  padding-bottom: 4px;
 }
 
 .btn-rate {
