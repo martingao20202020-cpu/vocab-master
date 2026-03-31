@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="description" content="VocabMaster - 科学记忆英语单词背诵卡片应用，支持艾宾浩斯记忆曲线、词根分析、双语释义、读音播放">
+  <meta name="theme-color" content="#0A0A14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>VocabMaster · 智能单词记忆</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+
+<div id="app">
+  <!-- Header -->
+  <header class="app-header">
+    <div class="logo">
+      <span class="logo-icon">📚</span>
+      <span>VocabMaster</span>
+    </div>
+    <div class="header-actions">
+      <button class="header-btn" id="btn-settings" title="设置">⚙️</button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <!-- ===== Dashboard View ===== -->
+    <section class="view active" id="view-home">
+      <div class="dashboard-greeting">
+        <h2 id="greeting-text">早上好 👋</h2>
+        <p>让我们开始今天的学习吧</p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card streak">
+          <div class="stat-icon">🔥</div>
+          <div class="stat-value" id="stat-streak">0</div>
+          <div class="stat-label">连续天数</div>
+        </div>
+        <div class="stat-card today">
+          <div class="stat-icon">📖</div>
+          <div class="stat-value" id="stat-today">0</div>
+          <div class="stat-label">今日已复习</div>
+        </div>
+        <div class="stat-card mastered">
+          <div class="stat-icon">✅</div>
+          <div class="stat-value" id="stat-mastered">0</div>
+          <div class="stat-label">已掌握</div>
+        </div>
+        <div class="stat-card total">
+          <div class="stat-icon">📦</div>
+          <div class="stat-value" id="stat-total">0</div>
+          <div class="stat-label">总词汇</div>
+        </div>
+      </div>
+
+      <div class="review-cta">
+        <button class="btn-review-start" id="btn-start-review">
+          <span>📖 开始复习</span>
+          <span class="cta-count" id="review-count">0 词待复习</span>
+        </button>
+      </div>
+
+      <div class="recent-words">
+        <div class="section-title">
+          <span class="icon">🕐</span>
+          <span>最近添加</span>
+        </div>
+        <div id="recent-words-list"></div>
+      </div>
+    </section>
+
+    <!-- ===== Review View ===== -->
+    <section class="view" id="view-review">
+      <div class="review-header">
+        <span class="review-progress-text" id="review-progress-text">0 / 0</span>
+        <button class="btn-close-review" id="btn-exit-review">✕</button>
+      </div>
+      <div class="review-progress-bar">
+        <div class="progress-fill" id="review-progress-fill" style="width: 0%"></div>
+      </div>
+
+      <!-- Flashcard -->
+      <div class="flashcard-container" id="flashcard-area">
+        <div class="flashcard" id="flashcard">
+          <div class="flashcard-face flashcard-front">
+            <div class="fc-word" id="fc-word"></div>
+            <div class="fc-phonetic" id="fc-phonetic"></div>
+            <div class="fc-pos" id="fc-pos"></div>
+            <button class="btn-pronounce" id="btn-pronounce" title="播放读音">🔊</button>
+            <div class="fc-tap-hint">👆 点击翻转卡片</div>
+          </div>
+          <div class="flashcard-face flashcard-back" id="fc-back">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Rating Buttons -->
+      <div class="rating-buttons" id="rating-buttons" style="display: none;">
+        <button class="btn-rate again" data-quality="0">
+          <span class="rate-emoji">😰</span>
+          <span class="rate-label">再来</span>
+          <span class="rate-interval" id="interval-again"></span>
+        </button>
+        <button class="btn-rate hard" data-quality="3">
+          <span class="rate-emoji">😐</span>
+          <span class="rate-label">困难</span>
+          <span class="rate-interval" id="interval-hard"></span>
+        </button>
+        <button class="btn-rate good" data-quality="4">
+          <span class="rate-emoji">😊</span>
+          <span class="rate-label">良好</span>
+          <span class="rate-interval" id="interval-good"></span>
+        </button>
+        <button class="btn-rate easy" data-quality="5">
+          <span class="rate-emoji">🤩</span>
+          <span class="rate-label">简单</span>
+          <span class="rate-interval" id="interval-easy"></span>
+        </button>
+      </div>
+
+      <!-- Review Complete -->
+      <div class="review-complete" id="review-complete" style="display: none;">
+        <div class="complete-icon">🎉</div>
+        <h2>复习完成！</h2>
+        <p>太棒了，今天的学习任务已完成</p>
+        <div class="review-stats-grid">
+          <div class="review-stat-item">
+            <div class="rs-value" id="rc-total" style="color: var(--primary-light)">0</div>
+            <div class="rs-label">总复习</div>
+          </div>
+          <div class="review-stat-item">
+            <div class="rs-value" id="rc-correct" style="color: var(--success)">0</div>
+            <div class="rs-label">记住了</div>
+          </div>
+          <div class="review-stat-item">
+            <div class="rs-value" id="rc-wrong" style="color: var(--danger)">0</div>
+            <div class="rs-label">需重学</div>
+          </div>
+        </div>
+        <button class="btn-primary" id="btn-review-done">🏠 返回首页</button>
+      </div>
+    </section>
+
+    <!-- ===== Add Word View ===== -->
+    <section class="view" id="view-add">
+      <div class="section-title" style="font-size: 18px; margin-bottom: 16px;">
+        <span class="icon">➕</span>
+        <span>添加单词</span>
+      </div>
+
+      <div class="search-container" id="search-container">
+        <div class="search-input-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="word-search-input" placeholder="输入英语单词..." autocomplete="off" autocapitalize="none">
+          <button class="btn-search-clear" id="btn-search-clear" style="display: none;">✕</button>
+        </div>
+        <div class="search-suggestions" id="search-suggestions"></div>
+      </div>
+
+      <!-- Word Detail Form (shown after selecting/entering a word) -->
+      <div class="word-detail-form" id="word-detail-form">
+        <div class="glass-card" style="margin-bottom: 16px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <div>
+              <div id="form-word-display" style="font-size: 24px; font-weight: 700;"></div>
+              <div id="form-phonetic-display" style="font-size: 14px; color: var(--text-secondary);"></div>
+            </div>
+            <button class="btn-pronounce" id="form-btn-pronounce" style="width: 40px; height: 40px; font-size: 18px;">🔊</button>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <label class="form-label">📌 词根分析</label>
+          <textarea id="form-roots" placeholder="例：a-(离开) + ban(禁令) + don(给予) → 放弃" rows="2"></textarea>
+        </div>
+
+        <div class="form-section">
+          <label class="form-label">📖 英文释义</label>
+          <textarea id="form-def-en" placeholder="English definition..." rows="2"></textarea>
+        </div>
+
+        <div class="form-section">
+          <label class="form-label">📖 中文释义</label>
+          <textarea id="form-def-zh" placeholder="中文释义..." rows="2"></textarea>
+        </div>
+
+        <div class="form-section">
+          <label class="form-label">🏷️ 词性</label>
+          <input type="text" id="form-pos" placeholder="例：v. / n. / adj.">
+        </div>
+
+        <div class="form-section">
+          <label class="form-label">💡 记忆方法</label>
+          <textarea id="form-mnemonic" placeholder="谐音、联想、故事等记忆技巧..." rows="2"></textarea>
+        </div>
+
+        <div class="form-section">
+          <label class="form-label">📝 例句 (英文)</label>
+          <textarea id="form-example-en" placeholder="Example sentence..." rows="2"></textarea>
+        </div>
+
+        <div class="form-section">
+          <label class="form-label">📝 例句 (中文)</label>
+          <textarea id="form-example-zh" placeholder="例句翻译..." rows="1"></textarea>
+        </div>
+
+        <div class="form-section">
+          <label class="form-label">🔗 同义词 (逗号分隔)</label>
+          <input type="text" id="form-synonyms" placeholder="desert, forsake, relinquish">
+        </div>
+
+        <div class="form-section">
+          <label class="form-label">🔗 反义词 (逗号分隔)</label>
+          <input type="text" id="form-antonyms" placeholder="keep, maintain, retain">
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 8px;">
+          <button class="btn-secondary" id="btn-cancel-add" style="flex: 1;">取消</button>
+          <button class="btn-primary" id="btn-save-word" style="flex: 2;">✅ 保存单词</button>
+        </div>
+      </div>
+
+      <!-- Suggested Words -->
+      <div class="suggested-words-section" id="suggested-section">
+        <div class="section-title">
+          <span class="icon">💡</span>
+          <span>推荐单词</span>
+        </div>
+        <div id="suggested-words-list"></div>
+      </div>
+    </section>
+
+    <!-- ===== Word List View ===== -->
+    <section class="view" id="view-words">
+      <div class="section-title" style="font-size: 18px; margin-bottom: 16px;">
+        <span class="icon">📋</span>
+        <span>我的词库</span>
+      </div>
+
+      <div class="wordlist-controls" id="wordlist-filters">
+        <button class="filter-chip active" data-filter="all">全部</button>
+        <button class="filter-chip" data-filter="new">🔵 新词</button>
+        <button class="filter-chip" data-filter="learning">🟡 学习中</button>
+        <button class="filter-chip" data-filter="reviewing">🟣 复习中</button>
+        <button class="filter-chip" data-filter="mastered">🟢 已掌握</button>
+      </div>
+
+      <div class="wordlist-search">
+        <div class="search-input-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="wordlist-search-input" placeholder="搜索单词..." autocomplete="off" autocapitalize="none">
+        </div>
+      </div>
+
+      <div class="word-list-container" id="word-list-container"></div>
+    </section>
+
+    <!-- ===== Stats View ===== -->
+    <section class="view" id="view-stats">
+      <div class="section-title" style="font-size: 18px; margin-bottom: 16px;">
+        <span class="icon">📊</span>
+        <span>学习统计</span>
+      </div>
+
+      <div class="stats-overview">
+        <div class="stats-grid">
+          <div class="stat-card total">
+            <div class="stat-icon">📅</div>
+            <div class="stat-value" id="stats-total-days">0</div>
+            <div class="stat-label">学习天数</div>
+          </div>
+          <div class="stat-card today">
+            <div class="stat-icon">🔄</div>
+            <div class="stat-value" id="stats-total-reviews">0</div>
+            <div class="stat-label">总复习次数</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Heatmap -->
+      <div class="stats-chart">
+        <div class="stats-chart-title">📅 学习日历 (最近28天)</div>
+        <div class="heatmap-grid" id="heatmap-grid"></div>
+      </div>
+
+      <!-- Mastery Distribution -->
+      <div class="stats-chart">
+        <div class="stats-chart-title">📊 掌握程度分布</div>
+        <div class="mastery-distribution" id="mastery-distribution"></div>
+      </div>
+
+      <!-- Upcoming Reviews -->
+      <div class="upcoming-section">
+        <div class="section-title">
+          <span class="icon">⏰</span>
+          <span>即将复习</span>
+        </div>
+        <div class="upcoming-list" id="upcoming-list"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-view="home" id="nav-home">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">首页</span>
+    </button>
+    <button class="nav-item" data-view="review" id="nav-review">
+      <span class="nav-icon">📖</span>
+      <span class="nav-label">复习</span>
+      <span class="nav-badge" id="nav-review-badge" style="display: none;">0</span>
+    </button>
+    <button class="nav-item" data-view="add" id="nav-add">
+      <span class="nav-icon">➕</span>
+      <span class="nav-label">添加</span>
+    </button>
+    <button class="nav-item" data-view="words" id="nav-words">
+      <span class="nav-icon">📋</span>
+      <span class="nav-label">词库</span>
+    </button>
+    <button class="nav-item" data-view="stats" id="nav-stats">
+      <span class="nav-icon">📊</span>
+      <span class="nav-label">统计</span>
+    </button>
+  </nav>
+
+  <!-- Word Detail Modal -->
+  <div class="modal-overlay" id="word-modal">
+    <div class="modal-content" id="word-modal-content">
+      <div class="modal-handle"></div>
+      <!-- Populated dynamically -->
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settings-modal">
+    <div class="modal-content">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <h2 style="font-size: 20px;">⚙️ 设置</h2>
+        <button class="btn-modal-close" id="btn-close-settings">✕</button>
+      </div>
+
+      <div class="settings-section">
+        <div class="section-title">🔊 发音设置</div>
+        <div class="settings-item">
+          <div>
+            <div class="settings-label">自动播放发音</div>
+            <div class="settings-desc">翻转卡片时自动播放</div>
+          </div>
+          <div class="toggle-switch active" id="toggle-auto-pronounce" data-setting="autoPlay"></div>
+        </div>
+        <div class="settings-item">
+          <div>
+            <div class="settings-label">语音速度</div>
+            <div class="settings-desc">调整TTS语速 (0.5-2.0)</div>
+          </div>
+          <input type="range" id="tts-speed" min="0.5" max="2.0" step="0.1" value="0.9" style="width: 120px;">
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="section-title">📚 学习设置</div>
+        <div class="settings-item">
+          <div>
+            <div class="settings-label">每日新词数量</div>
+            <div class="settings-desc">每天学习的新单词数</div>
+          </div>
+          <select id="daily-new-words" style="width: 80px; text-align: center;">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="15">15</option>
+            <option value="20">20</option>
+            <option value="30">30</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="section-title">💾 数据管理</div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-secondary" id="btn-export-data" style="flex: 1; padding: 10px; font-size: 13px;">📤 导出</button>
+          <button class="btn-secondary" id="btn-import-data" style="flex: 1; padding: 10px; font-size: 13px;">📥 导入</button>
+        </div>
+        <input type="file" id="import-file-input" accept=".json" style="display: none;">
+        <button class="btn-delete-word" id="btn-reset-data" style="margin-top: 12px;">🗑️ 重置所有数据</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="words-db.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

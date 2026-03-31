@@ -1,0 +1,17 @@
+{
+  "name": "VocabMaster",
+  "short_name": "VocabMaster",
+  "description": "智能英语单词记忆卡片 - 科学记忆曲线辅助背单词",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0A0A14",
+  "theme_color": "#0A0A14",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
