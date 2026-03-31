@@ -349,17 +349,62 @@
   }
 
   // ---- TTS ----
+  // Preferred female voice names (iOS/macOS/Windows/Android)
+  const FEMALE_VOICES = [
+    'samantha', 'karen', 'moira', 'tessa', 'fiona', 'victoria',
+    'allison', 'ava', 'susan', 'zira', 'hazel', 'linda',
+    'kate', 'serena', 'martha', 'catherine',
+    'google us english', 'google uk english female',
+    'female', 'woman'
+  ];
+  const MALE_VOICES = [
+    'daniel', 'alex', 'fred', 'tom', 'david', 'mark',
+    'james', 'lee', 'oliver', 'ralph', 'albert',
+    'google uk english male', 'male', 'man'
+  ];
+
+  function pickBestVoice(voices) {
+    const enVoices = voices.filter(v => v.lang && v.lang.startsWith('en'));
+    if (enVoices.length === 0) return null;
+
+    // Score each voice: higher = better
+    let best = null, bestScore = -999;
+    for (const v of enVoices) {
+      let score = 0;
+      const name = v.name.toLowerCase();
+
+      // Strong prefer known female voices
+      if (FEMALE_VOICES.some(f => name.includes(f))) score += 100;
+      // Penalize known male voices
+      if (MALE_VOICES.some(m => name.includes(m))) score -= 100;
+
+      // Prefer en-US
+      if (v.lang === 'en-US') score += 10;
+      // Prefer enhanced/premium voices
+      if (name.includes('enhanced') || name.includes('premium') || name.includes('compact')) score += 5;
+      // Prefer non-default (iOS specific higher quality voices)
+      if (!v.default) score += 1;
+
+      if (score > bestScore) {
+        bestScore = score;
+        best = v;
+      }
+    }
+    return best;
+  }
+
   function pronounceWord(word) {
     if (!word || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(word);
     u.lang = 'en-US';
     u.rate = state.settings.ttsSpeed || 0.9;
-    u.pitch = 1;
+    u.pitch = 1.05; // Slightly higher pitch for a softer tone
+
     const voices = window.speechSynthesis.getVoices();
-    const enVoice = voices.find(v => v.lang.startsWith('en') && v.name.includes('Female')) ||
-                    voices.find(v => v.lang.startsWith('en'));
-    if (enVoice) u.voice = enVoice;
+    const voice = pickBestVoice(voices);
+    if (voice) u.voice = voice;
+
     const btn = document.querySelector('.btn-pronounce');
     if (btn) btn.classList.add('playing');
     u.onend = () => { if (btn) btn.classList.remove('playing'); };
